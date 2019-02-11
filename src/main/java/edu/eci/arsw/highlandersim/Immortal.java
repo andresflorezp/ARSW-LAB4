@@ -5,80 +5,105 @@ import java.util.Random;
 
 public class Immortal extends Thread {
 
-    private ImmortalUpdateReportCallback updateCallback=null;
-    
-    private int health;
-    
-    private int defaultDamageValue;
+	private ImmortalUpdateReportCallback updateCallback = null;
 
-    private final List<Immortal> immortalsPopulation;
+	private int health;
 
-    private final String name;
+	private int defaultDamageValue;
 
-    private final Random r = new Random(System.currentTimeMillis());
+	private final List<Immortal> immortalsPopulation;
 
+	private final String name;
 
-    public Immortal(String name, List<Immortal> immortalsPopulation, int health, int defaultDamageValue, ImmortalUpdateReportCallback ucb) {
-        super(name);
-        this.updateCallback=ucb;
-        this.name = name;
-        this.immortalsPopulation = immortalsPopulation;
-        this.health = health;
-        this.defaultDamageValue=defaultDamageValue;
-    }
+	public boolean espere;
+	private final Random r = new Random(System.currentTimeMillis());
 
-    public void run() {
+	public Immortal(String name, List<Immortal> immortalsPopulation, int health, int defaultDamageValue,
+			ImmortalUpdateReportCallback ucb) {
+		super(name);
+		this.updateCallback = ucb;
+		this.name = name;
+		this.immortalsPopulation = immortalsPopulation;
+		this.health = health;
+		this.defaultDamageValue = defaultDamageValue;
+		this.espere = false;
+	}
 
-        while (true) {
-            Immortal im;
+	public void run() {
 
-            int myIndex = immortalsPopulation.indexOf(this);
+		while (true) {
+			Immortal im;
 
-            int nextFighterIndex = r.nextInt(immortalsPopulation.size());
+			int myIndex = immortalsPopulation.indexOf(this);
 
-            //avoid self-fight
-            if (nextFighterIndex == myIndex) {
-                nextFighterIndex = ((nextFighterIndex + 1) % immortalsPopulation.size());
-            }
+			int nextFighterIndex = r.nextInt(immortalsPopulation.size());
 
-            im = immortalsPopulation.get(nextFighterIndex);
+			// avoid self-fight
+			if (nextFighterIndex == myIndex) {
+				nextFighterIndex = ((nextFighterIndex + 1) % immortalsPopulation.size());
+			}
 
-            this.fight(im);
+			im = immortalsPopulation.get(nextFighterIndex);
 
-            try {
-                Thread.sleep(1);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+			this.fight(im);
 
-        }
+			try {
+				Thread.sleep(1);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 
-    }
+		}
 
-    public void fight(Immortal i2) {
+	}
 
-        if (i2.getHealth() > 0) {
-            i2.changeHealth(i2.getHealth() - defaultDamageValue);
-            this.health += defaultDamageValue;
-            updateCallback.processReport("Fight: " + this + " vs " + i2+"\n");
-        } else {
-            updateCallback.processReport(this + " says:" + i2 + " is already dead!\n");
-        }
+	public void fight(Immortal i2) {
+		for (;;) {
+			if (this.espere) {
+				synchronized (this) {
+					try {
+						System.out.println("Esta esperando");
+						wait(100);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			}
+			if (i2.getHealth() > 0) {
+				i2.changeHealth(i2.getHealth() - defaultDamageValue);
+				this.health += defaultDamageValue;
+				updateCallback.processReport("Fight: " + this + " vs " + i2 + "\n");
+			} else {
+				updateCallback.processReport(this + " says:" + i2 + " is already dead!\n");
+			}
+		}
 
-    }
+	}
 
-    public void changeHealth(int v) {
-        health = v;
-    }
+	public void changeHealth(int v) {
+		health = v;
+	}
 
-    public int getHealth() {
-        return health;
-    }
+	public synchronized int getHealth() {
+		return health;
+	}
 
-    @Override
-    public String toString() {
+	public void detener() {
 
-        return name + "[" + health + "]";
-    }
+		espere = true;
+
+	}
+
+	public void seguir() {
+
+		espere = false;
+	}
+
+	@Override
+	public String toString() {
+
+		return name + "[" + health + "]";
+	}
 
 }

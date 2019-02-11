@@ -1,0 +1,20 @@
+2. Check the code and identify how the indicated funcionality was implemented. Given the purpose of the game, 
+	an invariant should be that the sum of the life points of all the players always be the same.(Of course, 
+	in a moment of time when an operation of increase / reduction of time is not in process). 
+	For that case, for N players, what should be that value?
+
+
+TOMAR PANTALLAZO
+Nota:Para la solucion del problema aumentar en la clase Immortal aumentar el Thread.sleep una relacion (N+2)*1000;	
+
+R: La suma de los valores de los N inmortales sin aumento de tiempo ni reduccion de tiempo deberia ser N*100 donde N es el numero de inmortales.
+
+
+
+3.Run the application and verify how the "pause and check" option works, is the invariant satisfied?
+
+TOMAR PANTALLAZO
+NOTA:Para ver cambiar de nuevo la clase Immortal con Thread.sleep a 1
+R:No se cumple el invariante
+
+
