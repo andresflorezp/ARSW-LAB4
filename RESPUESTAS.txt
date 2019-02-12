@@ -1,3 +1,30 @@
+Part 1
+Threads control using wait/notify. Producer/Consumer
+Execute and check how the program works, Execute jVisualVM and inspect the CPU use of the corresponding process.
+What is the reason of this CPU consumption?
+	R:Se estan ejecutando subprocesos(Threads) y por definicion los Threads siempre consumen memoria y recursos 
+What is the class responsable of that consumption?
+	R:En este caso las clases responsables del consumo son StartProduction esta porque corre el hilo principal,
+	la clase Producer la cual esta corriendo un Thread y la clase Consumer que esta corriendo otro Thread.
+
+
+Write some code in order to solve the CPU's use problems , 
+having in mind  that for now the production is slow and the consumption is fast, 
+check that the CPU consumption has decreased.
+
+	R:Porque el Consumidor esta esperando que el productor le envio datos mas rapidos y al estar desbalanceados consumen mas
+	memoria y CPU.
+
+
+Make a producer that produces as fast as it can, and the consumer consumes slow,
+keeping in mind that the producer knows a Stock limit (how many elements have to have at most in the queue) 
+your code has to respect that limit.Check the Collection API used as queue in order to validate
+that the limit not be exceeded.Verify that when you set a small limit in the stock, 
+there is not a high CPU consumption or errors. So that, altogether we are exploring the total of servers.
+
+	R: Al momento de hacer el productor mas rapido y el consumidor mas lento notamos que se generan picos en la grafica del consumo de CPU 
+	para estabilizar el consumo de la CPU lo que se debe hacer es hacer igual de rapidos los dos procesos.
+	
 2. Check the code and identify how the indicated funcionality was implemented. Given the purpose of the game, 
 	an invariant should be that the sum of the life points of all the players always be the same.(Of course, 
 	in a moment of time when an operation of increase / reduction of time is not in process). 
