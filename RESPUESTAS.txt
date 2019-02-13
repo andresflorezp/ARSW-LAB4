@@ -44,4 +44,12 @@ TOMAR PANTALLAZO
 NOTA:Para ver cambiar de nuevo la clase Immortal con Thread.sleep a 1
 R:No se cumple el invariante
 
+Conclusion:
+
+Al momento de quedar dos inmortales vivos se quedan infinitamente luchando, se cumple el invariante
+para 100,1000,10000, la suma de la salud siempre debe ser igual.
+La condición de carrera es la lista de inmortales, por lo cual la pusimos "volatile" para que siempre
+se tomara el valor más actualizado de la misma y los hilos no guardaran su valor en cache sino que 
+leyeran y escribieran directamente en memoria.
+
 
