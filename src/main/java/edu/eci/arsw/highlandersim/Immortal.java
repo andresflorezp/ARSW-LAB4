@@ -7,7 +7,7 @@ public class Immortal extends Thread {
 
 	private ImmortalUpdateReportCallback updateCallback = null;
 
-	private int health;
+	private volatile int health;
 
 	private int defaultDamageValue;
 
@@ -18,9 +18,10 @@ public class Immortal extends Thread {
 	private Boolean vivo;
 
 	public boolean espere;
+	public volatile boolean isTurno;
 
 	public boolean fin;
-
+	public boolean parandolo = false;
 	public static final Object lock = new Object();
 
 	public static Object monitor = ControlFrame.monitor;
@@ -39,13 +40,15 @@ public class Immortal extends Thread {
 		this.espere = false;
 		this.vivo = true;
 		this.fin = false;
+		this.isTurno = true;
+
 	}
 
 	public void run() {
-		
-		while (true) {
+		//
+		while (!parandolo) {
 			System.out.println(isStop);
-			while(isStop) {
+			while (isStop) {
 				System.out.println("Stop");
 			}
 			Immortal im;
@@ -60,42 +63,64 @@ public class Immortal extends Thread {
 			}
 
 			im = immortalsPopulation.get(nextFighterIndex);
+			if (im.getHealth() > 0 && this.getHealth() > 0) {
+				int flag = 0;
 
-			this.fight(im);
+				for (Immortal imo : ControlFrame.immortals) {
+					if (imo.getHealth() > 0)
+						flag++;
+				}
+				System.out.println(flag);
+				if (flag == 2) {
+					System.out.println("ESTOY ENTRANDO----");
+					if (this.isTurno) {
+						im.isTurno = true;
+						this.isTurno = false;
+						this.fight(im);
+						try {
+							this.currentThread().sleep(100);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
 
-			try {
-
-				if (espere) {
-					synchronized (monitor) {
-						monitor.wait();
-						seguir();
 					}
+
+				} else {
+					this.fight(im);
 				}
 
-				Thread.sleep(100);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+				try {
+
+					if (espere) {
+						synchronized (monitor) {
+							monitor.wait();
+							seguir();
+						}
+					}
+
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+
 			}
-
 		}
-
 	}
 
 	public void fight(Immortal i2) {
-			
-			if (i2.getHealth() > 0) {
-				
-				i2.changeHealth(i2.getHealth() - defaultDamageValue);
-				this.health += defaultDamageValue;
-				updateCallback.processReport("Fight: " + this + " vs " + i2 + "\n");
-				if(i2.getHealth() > 0)ControlFrame.immortalsLives.add(i2);
-			} else {
-				muerto();
-				updateCallback.processReport(this + " says:" + i2 + " is already dead!\n");
-			}
-		}
 
-	
+		if (i2.getHealth() > 0) {
+
+			i2.changeHealth(i2.getHealth() - defaultDamageValue);
+			this.health += defaultDamageValue;
+			updateCallback.processReport("Fight: " + this + " vs " + i2 + "\n");
+			// if(i2.getHealth() > 0)ControlFrame.immortalsLives.add(i2);
+		} else {
+			muerto();
+			updateCallback.processReport(this + " says:" + i2 + " is already dead!\n");
+		}
+	}
 
 	public void sync(Immortal i) {
 		int i1 = System.identityHashCode(this);
@@ -169,6 +194,10 @@ public class Immortal extends Thread {
 	public void fin() {
 		this.fin = true;
 
+	}
+
+	public void pararTodo() {
+		parandolo = true;
 	}
 
 }

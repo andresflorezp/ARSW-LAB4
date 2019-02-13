@@ -31,28 +31,28 @@ public class ControlFrame extends JFrame {
 
 	private JPanel contentPane;
 
-	private volatile static List<Immortal> immortals;
+	public volatile static List<Immortal> immortals;
 
 	private JTextArea output;
 	private JLabel statisticsLabel;
 	private JScrollPane scrollPane;
 	private JTextField numOfImmortals;
-	public volatile static List<Immortal> immortalsLives= new ArrayList();;
+	public volatile static List<Immortal> immortalsLives = new ArrayList();;
 	public static Object monitor = new Object();
-	
+
 	/**
 	 * Launch the application.
 	 */
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
-			public void run(){
+			public void run() {
 				try {
 					ControlFrame frame = new ControlFrame();
-					List<Immortal> immortals2 = new ArrayList<>();
-					for(Immortal im:immortalsLives) {
-						if(im.getHealth()>0)immortals2.add(im);
-					}
-					immortals = immortalsLives;
+					/*
+					 * List<Immortal> immortals2 = new ArrayList<>(); for(Immortal
+					 * im:immortalsLives) { if(im.getHealth()>0)immortals2.add(im); } immortals =
+					 * immortalsLives;
+					 */
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -123,6 +123,8 @@ public class ControlFrame extends JFrame {
 
 					this.notifyAll();
 				}
+				for (Immortal im : immortals)
+					im.parar();
 
 			}
 		});
@@ -156,8 +158,8 @@ public class ControlFrame extends JFrame {
 		toolBar.add(btnStop);
 		btnStop.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				for (Immortal im : immortals)
-					im.parar();
+				for (Immortal im : immortals)im.pararTodo();;
+					
 			}
 		});
 		scrollPane = new JScrollPane();
