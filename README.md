@@ -20,6 +20,126 @@ Control de hilos con wait/notify. Productor/consumidor.
 2. Haga los ajustes necesarios para que la solución use más eficientemente la CPU, teniendo en cuenta que -por ahora- la producción es lenta y el consumo es rápido. Verifique con JVisualVM que el consumo de CPU se reduzca.
 3. Haga que ahora el productor produzca muy rápido, y el consumidor consuma lento. Teniendo en cuenta que el productor conoce un límite de Stock (cuantos elementos debería tener, a lo sumo en la cola), haga que dicho límite se respete. Revise el API de la colección usada como cola para ver cómo garantizar que dicho límite no se supere. Verifique que, al poner un límite pequeño para el 'stock', no haya consumo alto de CPU ni errores.
 
+#### Codificación Consumer:
+
+```java
+package edu.eci.arst.concprg.prodcons;
+
+import java.util.Queue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+public class Consumer extends Thread{
+    
+    private Queue<Integer> queue;
+    
+    
+    public Consumer(Queue<Integer> queue){
+        this.queue=queue;        
+    }
+    
+    @Override
+    public void run() {
+        while (true) {
+
+            if (queue.size() > 0) {
+                int elem=queue.poll();
+                System.out.println("Consumer consumes "+elem);                                
+            }
+            
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Producer.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+}
+
+```
+
+#### Codificación Producer:
+
+```java
+package edu.eci.arst.concprg.prodcons;
+
+import java.util.Queue;
+import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+public class Producer extends Thread {
+
+    private Queue<Integer> queue = null;
+
+    private int dataSeed = 0;
+    private int cnt=0;
+    private Random rand=null;
+    private final long stockLimit;
+
+    public Producer(Queue<Integer> queue,long stockLimit) {
+        this.queue = queue;
+        rand = new Random(System.currentTimeMillis());
+        this.stockLimit=stockLimit;
+    }
+
+    @Override
+    public void run() {
+        while (true) {
+
+            dataSeed = dataSeed + rand.nextInt(100);
+            System.out.println("Producer added " + dataSeed);
+       
+            queue.add(dataSeed);
+           
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Producer.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+}
+```
+
+#### Codificación StartProduction:
+
+```java
+package edu.eci.arst.concprg.prodcons;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+public class StartProduction {
+    
+    
+    public static void main(String[] args) {
+        
+        Queue<Integer> queue=new LinkedBlockingQueue<>(Integer.MAX_VALUE);
+        
+        
+        new Producer(queue,Integer.MAX_VALUE).start();
+        
+        //let the producer create products for 5 seconds (stock).
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(StartProduction.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        new Consumer(queue).start();
+    }
+    
+
+}
+```
 
 #### Parte II. – Antes de terminar la clase.
 
