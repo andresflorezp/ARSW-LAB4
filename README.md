@@ -20,6 +20,126 @@ Control de hilos con wait/notify. Productor/consumidor.
 2. Haga los ajustes necesarios para que la solución use más eficientemente la CPU, teniendo en cuenta que -por ahora- la producción es lenta y el consumo es rápido. Verifique con JVisualVM que el consumo de CPU se reduzca.
 3. Haga que ahora el productor produzca muy rápido, y el consumidor consuma lento. Teniendo en cuenta que el productor conoce un límite de Stock (cuantos elementos debería tener, a lo sumo en la cola), haga que dicho límite se respete. Revise el API de la colección usada como cola para ver cómo garantizar que dicho límite no se supere. Verifique que, al poner un límite pequeño para el 'stock', no haya consumo alto de CPU ni errores.
 
+#### Codificación Consumer:
+
+```java
+package edu.eci.arst.concprg.prodcons;
+
+import java.util.Queue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+public class Consumer extends Thread{
+    
+    private Queue<Integer> queue;
+    
+    
+    public Consumer(Queue<Integer> queue){
+        this.queue=queue;        
+    }
+    
+    @Override
+    public void run() {
+        while (true) {
+
+            if (queue.size() > 0) {
+                int elem=queue.poll();
+                System.out.println("Consumer consumes "+elem);                                
+            }
+            
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Producer.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+}
+
+```
+
+#### Codificación Producer:
+
+```java
+package edu.eci.arst.concprg.prodcons;
+
+import java.util.Queue;
+import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+public class Producer extends Thread {
+
+    private Queue<Integer> queue = null;
+
+    private int dataSeed = 0;
+    private int cnt=0;
+    private Random rand=null;
+    private final long stockLimit;
+
+    public Producer(Queue<Integer> queue,long stockLimit) {
+        this.queue = queue;
+        rand = new Random(System.currentTimeMillis());
+        this.stockLimit=stockLimit;
+    }
+
+    @Override
+    public void run() {
+        while (true) {
+
+            dataSeed = dataSeed + rand.nextInt(100);
+            System.out.println("Producer added " + dataSeed);
+       
+            queue.add(dataSeed);
+           
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Producer.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+}
+```
+
+#### Codificación StartProduction:
+
+```java
+package edu.eci.arst.concprg.prodcons;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+public class StartProduction {
+    
+    
+    public static void main(String[] args) {
+        
+        Queue<Integer> queue=new LinkedBlockingQueue<>(Integer.MAX_VALUE);
+        
+        
+        new Producer(queue,Integer.MAX_VALUE).start();
+        
+        //let the producer create products for 5 seconds (stock).
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(StartProduction.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        new Consumer(queue).start();
+    }
+    
+
+}
+```
 
 #### Parte II. – Antes de terminar la clase.
 
@@ -27,6 +147,115 @@ Teniendo en cuenta los conceptos vistos de condición de carrera y sincronizaci�
 
 - La búsqueda distribuida se detenga (deje de buscar en las listas negras restantes) y retorne la respuesta apenas, en su conjunto, los hilos hayan detectado el número de ocurrencias requerido que determina si un host es confiable o no (_BLACK_LIST_ALARM_COUNT_).
 - Lo anterior, garantizando que no se den condiciones de carrera.
+
+#### Codificación HostBlackListsValidator:
+
+```java
+package edu.eci.arsw.blackList;
+
+import edu.eci.arsw.spamkeywordsdatasource.HostBlacklistsDataSourceFacade;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+public class HostBlackListsValidator {
+
+	private static final int BLACK_LIST_ALARM_COUNT = 5;
+
+	/**
+	 * Check the given host's IP address in all the available black lists, and
+	 * report it as NOT Trustworthy when such IP was reported in at least
+	 * BLACK_LIST_ALARM_COUNT lists, or as Trustworthy in any other case. The search
+	 * is not exhaustive: When the number of occurrences is equal to
+	 * BLACK_LIST_ALARM_COUNT, the search is finished, the host reported as NOT
+	 * Trustworthy, and the list of the five blacklists returned.
+	 *
+	 * @param ipaddress suspicious host's IP address.
+	 * @return Blacklists numbers where the given host's IP address was found.
+	 */
+	public List<Integer> checkHost(String ipaddress, int threads) {
+
+		LinkedList<Integer> blackListOcurrences = new LinkedList<>();
+
+		int ocurrencesCount = 0;
+		ArrayList<ThreadCheckList> searchers = new ArrayList<ThreadCheckList>();
+		HostBlacklistsDataSourceFacade skds = HostBlacklistsDataSourceFacade.getInstance();
+		int checkedListsCount = 0;
+		int size = skds.getRegisteredServersCount() / threads;
+		int actual = 0;
+
+		for (int i = 0; i < threads; i++) {
+			if (i == threads - 1) {
+				searchers.add(new ThreadCheckList(skds, actual, skds.getRegisteredServersCount(),
+						BLACK_LIST_ALARM_COUNT, ipaddress));
+			} else {
+				searchers.add(new ThreadCheckList(skds, actual, actual + size, BLACK_LIST_ALARM_COUNT, ipaddress));
+			}
+			searchers.get(i).start();
+			actual += size;
+
+		}
+		boolean notAllFound = false;
+		while (notAllFound) {
+			synchronized (this) {
+				for (int i = 0; i < threads; i++) {
+					if (searchers.get(i).getOcurrences() >= BLACK_LIST_ALARM_COUNT) {
+						notAllFound = false;
+						for (int j = 0; j < threads; j++) {
+							searchers.get(j).stop();
+						}
+					}
+				}
+			}
+		}
+		for (int i = 0; i < threads; i++) {
+			try {
+				searchers.get(i).join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			ocurrencesCount += searchers.get(i).getOcurrences();
+			blackListOcurrences.addAll(searchers.get(i).getBlackListOcurrences());
+		}
+
+		if (ocurrencesCount >= BLACK_LIST_ALARM_COUNT) {
+			skds.reportAsNotTrustworthy(ipaddress);
+		} else {
+			skds.reportAsTrustworthy(ipaddress);
+		}
+		LOG.log(Level.INFO, "Checked Black Lists:{0} of {1}",
+				new Object[] { checkedListsCount, skds.getRegisteredServersCount() });
+
+		return blackListOcurrences;
+	}
+
+	private static final Logger LOG = Logger.getLogger(HostBlackListsValidator.class.getName());
+
+}
+```
+
+#### Codificación Main:
+
+```java
+package edu.eci.arsw.blackList;
+
+import java.util.List;
+
+public class Main {
+    
+    public static void main(String a[]){
+        HostBlackListsValidator hblv=new HostBlackListsValidator();
+        int threads = 50;
+        System.out.println("threads: "+ threads);
+        List<Integer> blackListOcurrences=hblv.checkHost("202.24.34.55", threads);
+        System.out.println("The host was found in the following blacklists:"+blackListOcurrences);
+        
+    }
+    
+}
+```
 
 #### Parte II. – Avance para la siguiente clase
 
