@@ -142,19 +142,19 @@ public class StartProduction {
 ```
 #### Grafica proceso 1 Consumer/Producer:
 
-![Screenshot](images/Proceso 1 Consumidor-Productor.PNG)
+![Screenshot](images/Proceso1Consumidor-Productor.PNG)
 
 #### Grafica proceso 2 Consumer/Producer:
 
-![Screenshot](images/Proceso 2 Consumidor-Productor.PNG)
+![Screenshot](images/Proceso2Consumidor-Productor.PNG)
 
 #### Grafica consumo extra de procesador 1:
 
-![Screenshot](images/HIGH CONSUMER-PRODUCER.PNG)
+![Screenshot](images/HIGHCONSUMER-PRODUCER.PNG)
 
 #### Grafica consumo extra de procesador 2:
 
-![Screenshot](images/HIGH 2 CONSUMER-PRODUCER.PNG)
+![Screenshot](images/HIGH2CONSUMER-PRODUCER.PNG)
 
 #### Parte II. – Antes de terminar la clase.
 
